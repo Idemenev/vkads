@@ -34,12 +34,24 @@ class Ads extends Controller
         $this->initClient($this->token->token);
     }
 
+    /**
+     * User accounts list
+     *
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function index()
     {
         $resp = $this->sendRequest('ads.getAccounts');
         return view('vk/ads/cabinets', ['token' => $this->token, 'data' => $resp]);
     }
 
+    /**
+     * List of all campaigns of an account
+     *
+     * @param $cabinetId
+     * @param $cabinetName
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function cabinet($cabinetId, $cabinetName)
     {
         $resp = $this->sendRequest('ads.getCampaigns', ['account_id' => $cabinetId, 'include_deleted' => 0]);
@@ -50,6 +62,15 @@ class Ads extends Controller
         ]);
     }
 
+    /**
+     * List of advertisements of a campaign
+     *
+     * @param $cabinetId
+     * @param $cabinetName
+     * @param $campaignId
+     * @param $campaignName
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function campaign($cabinetId, $cabinetName, $campaignId, $campaignName)
     {
         $reqParams = ['account_id' => $cabinetId, 'campaign_ids' => VkAdHelper::getJsonSerialized([$campaignId]), 'include_deleted' => 0];
@@ -105,6 +126,8 @@ class Ads extends Controller
     }
 
     /**
+     * VK oath authorization
+     *
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
@@ -138,6 +161,11 @@ class Ads extends Controller
         }
     }
 
+    /**
+     * Login page
+     *
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function login()
     {
         return view('/vk/ads/login');
@@ -149,6 +177,12 @@ class Ads extends Controller
         return redirect()->route('login');
     }
 
+    /**
+     * Delete advertisement
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(Request $request)
     {
         // TODO: check result of deletion
@@ -163,7 +197,7 @@ class Ads extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update advertisement.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
@@ -192,6 +226,10 @@ class Ads extends Controller
         return array_merge($request, $diversity[$key]);
     }
 
+    /**
+     * @param string $token VK auth token
+     * @return VkClient
+     */
     protected function initClient(string $token) : \ATehnix\VkClient\Client
     {
         $this->client = new VkClient(env('VKONTAKTE_API_VERSION'));
@@ -212,6 +250,12 @@ class Ads extends Controller
         );
     }
 
+    /**
+     * Load cities from VK database
+     *
+     * @param array $data [cityId => countryId]
+     * @return bool
+     */
     protected function loadCities(array $data) : bool
     {
         $dbData = City::find(array_keys($data))->keyBy('id')->all();
@@ -231,6 +275,12 @@ class Ads extends Controller
         return true;
     }
 
+    /**
+     * Load interests from VK database
+     *
+     * @param array $ids interest ids
+     * @return bool
+     */
     protected function loadInterests(array $ids) : bool
     {
         $dbData = Interest::find($ids)->keyBy('id')->all();
@@ -250,6 +300,13 @@ class Ads extends Controller
         return true;
     }
 
+    /**
+     * Send request to VK API
+     *
+     * @param VkRequest|string $request
+     * @param array $options
+     * @return \Illuminate\Http\RedirectResponse
+     */
     protected function sendRequest($request, array $options = [])
     {
         try {
